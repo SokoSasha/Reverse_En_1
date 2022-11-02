@@ -11,3 +11,5 @@ Victim.vcxproj.FileListAbsolute.txt
 vc143.idb
 vc143.pdb
 /x64/Debug/Victim.tlog
+/.vs
+*.enc

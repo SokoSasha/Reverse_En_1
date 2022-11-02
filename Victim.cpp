@@ -3,14 +3,90 @@
 #include <string>
 using namespace std;
 
-#define PassWord "13968A@"
-#define off "0000"
-#define OFF (pass == off)
+class ObString {
+public:
+
+#define InitMes Messages.Init()
+#define PathS Messages.Path()
+#define ShutMes Messages.Shut()
+#define MenuMes Messages.Menu()
+#define BackMes Messages.Back()
+#define TryMes Messages.Try()
+#define WrongMes Messages.Wrong()
+#define PW Messages.PassWord()
+#define OFF (qwerty == Messages.OF())
+
+	void Init() {
+		cout << Decode(init_str);
+	}
+
+	const string Path() {
+		return Decode(path);
+	}
+
+	void Shut() {
+		cout << Decode(bye) << endl;
+	}
+
+	void Menu() {
+		cout << Decode(menu);
+	}
+
+	void Back() {
+		cout << Decode(back) << endl << endl;
+	}
+
+	void Try() {
+		cout << Decode(trya) << endl << endl;
+	}
+
+	void Wrong() {
+		cout << Decode(wrong) << endl << endl;
+	}
+
+	const string PassWord() {
+		return Decode(password);
+	}
+
+	const string OF() {
+		return Decode(off);
+	}
+
+	void Encode(const string str) {
+		string enc;
+		enc.resize(str.size());
+		size_t size = str.size();
+		for (size_t i = 0; i < size; i++) {
+			enc[i] = str[i] + i;
+		}
+		cout << enc;
+	}
+private:
+	const string Decode(string dec) {
+		string back;
+		back.resize(dec.size());
+		for (size_t i = 0; i < dec.size(); i++) {
+			back[i] = dec[i] - i;
+		}
+		return back;
+	}
+	const string init_str = "Pmgdwj2'mw~p~-~pƒ„‰‚†y6‹‡9Š‹€ƒ„„+`aD";
+	const string menu = "[2_#Wmu~(os}.x€€x4ƒ‹„z~Œ%wO{?s‰‘šD†’“H™’šš’N¥ž”˜¦¨@’h–Z€´¦²I~b";
+	const string path = "C;^Vexnhd<*ÕüþjD0â÷ÿù\x6\b\atëêãëëzkƒƒT€™‹ŸœWž£ ";
+	const string bye = "Siwwxntn(my‚z;<=\x1aX‚xw|";
+	const string back = "Bben$yu'xj}~ƒ|€s0tzxw€";
+	const string trya = "Ts{#elgpv";
+	const string wrong = "Wsqqk%vh{|z~q/";
+	const string password = "14;9<FF";
+	const string off = "0123";
+};
+
+ObString Messages;
 
 const string oneNum(void) {
 	string number;
 
-	ifstream in("C:\\Sasha\\3 Êðñ\\5 Ñåìåñòð\\ÒÐÈÏÎ\\Ëàáà1\\Victim\\text.txt");
+	ifstream in(PathS);
 
 	if (in.is_open())
 		getline(in, number);
@@ -22,7 +98,7 @@ const string oneNum(void) {
 const string allNums(void) {
 	string number, numbers;
 
-	ifstream in("C:\\Sasha\\3 Êðñ\\5 Ñåìåñòð\\ÒÐÈÏÎ\\Ëàáà1\\Victim\\text.txt");
+	ifstream in(PathS);
 
 	if (in.is_open()) {
 		while (getline(in, number))
@@ -34,29 +110,29 @@ const string allNums(void) {
 }
 
 bool checkPass(string pass) {
-	return pass == PassWord;
+	return pass == PW;
 }
 
 int main() {
 	while (1) {
-		cout << "Please, enter password to proceed" << endl << ">> ";
-		string pass;
-		cin >> pass;
+		InitMes;
+		string qwerty;
+		cin >> qwerty;
 		if (OFF) {
-			cout << "Shutting down..." << endl << "Goodbye" << endl;
+			ShutMes;
 			system("pause");
 			return 0;
 		}
-		if (checkPass(pass)) {
+		if (checkPass(qwerty)) {
 			int ch = 1;
 			while (ch) {
 				bool out = 0;
-				cout << "[1] Show first phone number" << endl << "[2] Show all phone numbers" << endl << "[0] Exit" << endl << ">> ";
+				MenuMes;
 				cin >> ch;
 				switch (ch)
 				{
-				case 0: { 
-					cout << "Back to password check" << endl << endl;
+				case 0: {
+					BackMes;
 					out = 1;
 					ch = 1;
 					break;
@@ -70,17 +146,16 @@ int main() {
 					break;
 				}
 				default: {
-					cout << "Try again" << endl << endl;
+					TryMes;
 					break;
 				}
 				}
 				if (out) break;
 			}
 		}
-		else cout << "Wrong password!" << endl << endl << ">> ";
+		else WrongMes;
 	}
 
-	cout << "Here" << endl;
 	system("pause");
 	return 0;
 	
