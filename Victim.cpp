@@ -109,8 +109,8 @@ const string allNums(void) {
 	return numbers;
 }
 
-bool checkPass(string pass) {
-	return pass == PW;
+bool checkPass(string qwer) {
+	return qwer == PW;
 }
 
 int main() {
