@@ -3,6 +3,9 @@
 #include <string>
 using namespace std;
 
+typedef unsigned char* PUCHAR;
+#define CRC 0x23C6C655
+
 //A class of hidden string to display
 class ObString {
 public:
@@ -82,14 +85,12 @@ public:
 		}
 	}
 
-	void Encode(const string str) {
-		string enc;
-		enc.resize(str.size());
-		size_t size = str.size();
-		for (size_t i = 0; i < size; i++) {
-			enc[i] = str[i] + i;
-		}
-		cout << enc;
+	void OK() {
+		cout << Decode(OKe) << endl << endl;
+	}
+
+	void FCH() {
+		cout << Decode(fileChange) << endl << endl;;
 	}
 private:
 	const string Decode(string dec) {
@@ -123,11 +124,14 @@ private:
 	const string fp2 = "aaaa";
 	const string fp3 = "qwertyuiop";
 	const string fp4 = "password";
+	const string fileChange = "Fjnh$|gz(lrlztss11Uƒˆ…GHI";
+	const string OKe = "Ewgu}ynpvp*t-}z1";
 };
 
 //Hidden messages
 ObString Secret;
 
+//Usefull func ¹1
 const string oneNum(void) {
 	string number;
 
@@ -140,6 +144,7 @@ const string oneNum(void) {
 	return number + '\n';
 }
 
+//Usefull func ¹2
 const string allNums(void) {
 	string number, numbers;
 
@@ -154,9 +159,11 @@ const string allNums(void) {
 	return numbers;
 }
 
+//Func to check is password is correct
 bool checkPass(string qwer) {
 	return qwer == PW;
 }
+void CPEnd() {}
 
 //Some garbage to distract "tHe HaCkErS"
 void VeryUsefullFunc() {
@@ -176,7 +183,44 @@ void VeryUsefullFunc() {
 	}
 }
 
+//Func to check CRC
+unsigned int CRC32_function(unsigned char* buf, unsigned long len)
+{
+	unsigned long crc_table[256];
+	unsigned long crc;
+	for (int i = 0; i < 256; i++)
+	{
+		crc = i;
+		for (int j = 0; j < 8; j++)
+			crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320UL : crc >> 1;
+		crc_table[i] = crc;
+	};
+	crc = 0xFFFFFFFFUL;
+	while (len--)
+		crc = crc_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
+	return crc ^ 0xFFFFFFFFUL;
+}
+
+//Resulf of CRC checking
+bool CRC32_check() {
+	auto len = sizeof(checkPass);//(PUCHAR)checkPass - (PUCHAR)CPEnd;
+	auto len1 = (PUCHAR)checkPass - (PUCHAR)CPEnd;
+	auto thisCRC = CRC32_function((PUCHAR)checkPass, len);
+
+	if (thisCRC == CRC) return false;
+	else {
+		return true;
+	}
+}
+
 int main() {
+	
+	//CRC32 check for modification
+	if (CRC32_check()) {
+		Secret.FCH();
+		return 0;
+	}
+
 	while (1) {
 		InitMes;
 		string qwerty;
