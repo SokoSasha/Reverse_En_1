@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <windows.h>
+#include <winternl.h>
 using namespace std;
 
 typedef unsigned char* PUCHAR;
-#define CRC 0x23C6C655
+#define CRC 0xC95A'0391
+
 
 //A class of hidden string to display
 class ObString {
@@ -24,6 +27,8 @@ public:
 #define FP2 Secret.FP(2)
 #define FP3 Secret.FP(3)
 #define FP4 Secret.FP(4)
+#define FileCh Secret.FCH()
+#define DeBg Secret.DeBG()
 
 	void Init() {
 		cout << Decode(init_str);
@@ -90,8 +95,13 @@ public:
 	}
 
 	void FCH() {
-		cout << Decode(fileChange) << endl << endl;;
+		cout << Decode(fileChange) << endl << endl;
 	}
+
+	void DeBG() {
+		cout << Decode(Debg) << endl;
+	}
+
 private:
 	const string Decode(string dec) {
 		string back;
@@ -126,6 +136,7 @@ private:
 	const string fp4 = "password";
 	const string fileChange = "Fjnh$|gz(lrlztss11Uƒˆ…GHI";
 	const string OKe = "Ewgu}ynpvp*t-}z1";
+	const string Debg = "Suqs$ikij~qp~.";
 };
 
 //Hidden messages
@@ -141,7 +152,7 @@ const string oneNum(void) {
 		getline(in, number);
 	in.close();
 
-	return number + '\n';
+	return "\t" + number + '\n';
 }
 
 //Usefull func ¹2
@@ -152,7 +163,7 @@ const string allNums(void) {
 
 	if (in.is_open()) {
 		while (getline(in, number))
-			numbers += number + '\n';
+			numbers += "\t" + number + '\n';
 	}
 	in.close();
 
@@ -203,8 +214,7 @@ unsigned int CRC32_function(unsigned char* buf, unsigned long len)
 
 //Resulf of CRC checking
 bool CRC32_check() {
-	auto len = sizeof(checkPass);//(PUCHAR)checkPass - (PUCHAR)CPEnd;
-	auto len1 = (PUCHAR)checkPass - (PUCHAR)CPEnd;
+	auto len = (PUCHAR)checkPass - (PUCHAR)CPEnd;
 	auto thisCRC = CRC32_function((PUCHAR)checkPass, len);
 
 	if (thisCRC == CRC) return false;
@@ -213,18 +223,141 @@ bool CRC32_check() {
 	}
 }
 
+//Debbuger catcher #1
+void DBG1() {
+	if (IsDebuggerPresent()) {
+		DeBg;
+		system(POZ);
+		exit(-1);
+	}
+}
+
+//Debbuger catcher #2
+void DBG2() {
+	BOOL IsDbgPresent = FALSE;
+	CheckRemoteDebuggerPresent(GetCurrentProcess(), &IsDbgPresent);
+	if (IsDbgPresent)
+	{
+		DeBg;
+		system(POZ);
+		exit(-1);
+	}
+}
+
+//Debbuger catcher #3
+PVOID GetPEB()
+{
+#ifdef _WIN64
+	return (PVOID)__readgsqword(0x0C * sizeof(PVOID));
+#else
+	return (PVOID)__readfsdword(0x0C * sizeof(PVOID));
+#endif
+}
+
+PVOID GetPEB64()
+{
+	PVOID pPeb = 0;
+#ifndef _WIN64
+	// 1. There are two copies of PEB - PEB64 and PEB32 in WOW64 process
+	// 2. PEB64 follows after PEB32
+	// 3. This is true for version less then Windows 8, 
+	//    else __readfsdword returns address of real PEB64
+	if (IsWin8OrHigher())
+	{
+		BOOL isWow64 = FALSE;
+		typedef BOOL(WINAPI* pfnIsWow64Process)(HANDLE hProcess, PBOOL isWow64);
+		pfnIsWow64Process fnIsWow64Process = (pfnIsWow64Process)
+			GetProcAddress(GetModuleHandleA("Kernel32.dll"), "IsWow64Process");
+		if (fnIsWow64Process(GetCurrentProcess(), &isWow64))
+		{
+			if (isWow64)
+			{
+				pPeb = (PVOID)__readfsdword(0x0C * sizeof(PVOID));
+				pPeb = (PVOID)((PBYTE)pPeb + 0x1000);
+			}
+		}
+	}
+#endif
+	return pPeb;
+}
+
+#define FLG_HEAP_ENABLE_TAIL_CHECK   0x10
+#define FLG_HEAP_ENABLE_FREE_CHECK   0x20
+#define FLG_HEAP_VALIDATE_PARAMETERS 0x40
+#define NT_GLOBAL_FLAG_DEBUGGED (FLG_HEAP_ENABLE_TAIL_CHECK | FLG_HEAP_ENABLE_FREE_CHECK | FLG_HEAP_VALIDATE_PARAMETERS)
+
+//Debbuger catcher #3
+void DBG3()
+{
+	PVOID pPeb = GetPEB();
+	PVOID pPeb64 = GetPEB64();
+	DWORD offsetNtGlobalFlag = 0;
+#ifdef _WIN64
+	offsetNtGlobalFlag = 0xBC;
+#else
+	offsetNtGlobalFlag = 0x68;
+#endif
+	DWORD NtGlobalFlag = *(PDWORD)((PBYTE)pPeb + offsetNtGlobalFlag);
+	if (NtGlobalFlag & NT_GLOBAL_FLAG_DEBUGGED)
+	{
+		DeBg;
+		system(POZ);
+		exit(-1);
+	}
+	if (pPeb64)
+	{
+		DWORD NtGlobalFlagWow64 = *(PDWORD)((PBYTE)pPeb64 + 0xBC);
+		if (NtGlobalFlagWow64 & NT_GLOBAL_FLAG_DEBUGGED)
+		{
+			DeBg;
+			system(POZ);
+			exit(-1);
+		}
+	}
+}
+
+//Debbuger catcher #4
+void DBG4() {
+	BOOL WINAPI CheckRemoteDebuggerPresent(
+		_In_    HANDLE hProcess,
+		_Inout_ PBOOL  pbDebuggerPresent
+	);
+
+	NTSTATUS WINAPI NtQueryInformationProcess(
+		_In_      HANDLE           ProcessHandle,
+		_In_      PROCESSINFOCLASS ProcessInformationClass,
+		_Out_     PVOID            ProcessInformation,
+		_In_      ULONG            ProcessInformationLength,
+		_Out_opt_ PULONG           ReturnLength
+	);
+
+	BOOL IsDbgPresent = FALSE;
+	CheckRemoteDebuggerPresent(GetCurrentProcess(), &IsDbgPresent);
+	{
+		DeBg;
+		system(POZ);
+		exit(-1);
+	}
+
+}
+
+#define DBG DBG1();DBG2();DBG3();DBG4();
+
 int main() {
-	
+
+	//DBG;
+
 	//CRC32 check for modification
 	if (CRC32_check()) {
-		Secret.FCH();
+		FileCh;
+		system(POZ);
 		return 0;
 	}
 
 	while (1) {
 		InitMes;
 		string qwerty;
-		cin >> qwerty;
+		getline(cin, qwerty);
 		if (OFF) {
 			ShutMes;
 			system(POZ);
